@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Listening Report</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+<style>
+:root {
+  --bg:#e7f4f7;
+  --card:#e7f4f7;
+  --muted:#414042;
+  --text:#414042;
+  --accent:#29264B;
+  --border:#e7f4f7;
+
+  /* CEMD-ish palette (adjust here if you have exact hexes) */
+  --cemd-accent:#29264B;  /* primary */
+  --cemd-carbon:#414042;  /* text */
+  --cemd-orchid:#7C3AED;  /* accent 2 */
+  --cemd-mango:#F59E0B;   /* accent 3 */
+  --cemd-teal:#0EA5A4;    /* accent 4 */
+  --cemd-slate:#64748B;   /* neutral */
+}
+
+html,body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:'Montserrat', system-ui, sans-serif;
+  margin:0;
+}
+
+.wrap{max-width:1200px;margin:24px auto;padding:0 16px 40px;}
+.panel{background:var(--card);border-radius:16px;padding:16px;box-shadow:0 8px 20px rgba(0,0,0,.25);margin-top:16px;}
+.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:12px;margin-top:16px;}
+.card{grid-column:span 3;border-radius:16px;padding:14px;box-shadow:0 8px 20px rgba(0,0,0,.25);background:var(--card);}
+.label{font-size:12px;color:var(--muted);font-weight:600;}
+.value{font-size:20px;font-weight:700;color:var(--accent);}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.chart-wrap{height:320px;background:#fff;border-radius:12px;box-shadow:0 8px 20px rgba(0,0,0,.12);padding:12px;}
+.table-wrap{max-height:60vh;overflow:auto;border-radius:12px;background:#fff;box-shadow:0 8px 20px rgba(0,0,0,.12);}
+table{width:100%;border-collapse:collapse;}
+th,td{padding:10px;border-bottom:1px solid #ddd;text-align:left;vertical-align:top;}
+th{position:sticky;top:0;background:#fff;color:var(--accent);font-weight:700;}
+
+.summary-cell{
+  white-space: normal;
+  line-height: 1.45;
+  color: var(--text);
+}
+</style>
+</head>
+
+<body>
+<div class="wrap">
+  <h1 style="margin:0;color:var(--accent);font-size:22px;font-weight:700;">Listening Report</h1>
+
+  <div class="panel">
+    <strong style="color:var(--muted);">Month</strong>
+    <select id="monthSelect" style="margin-left:10px;padding:8px 10px;border-radius:10px;border:1px solid var(--border);background:#fff;color:var(--text);font-weight:600;"></select>
+    <span id="windowLabel" style="margin-left:10px;color:var(--muted);font-weight:500;"></span>
+  </div>
+
+  <div class="grid" id="kpiGrid"></div>
+
+  <div class="panel">
+    <div class="two-col">
+      <div class="chart-wrap"><canvas id="stateBar"></canvas></div>
+      <div class="chart-wrap"><canvas id="typePie"></canvas></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="table-wrap" id="tableMount"></div>
+  </div>
+
+  <small style="display:block;margin-top:12px;color:var(--muted);font-weight:600;">Generated: 2025-12-22 11:43</small>
+</div>
+
+<script type="application/json" id="reportData">
+[{"document_posted_date": "2025-11-30", "state": "AK", "name": "Alaska Department of Education and Early Development", "summary": "The State of Alaska seeks vendor input to develop a statewide comparative government and civics education curriculum, a civics assessment, and a civics project-based assessment, including proposed project schedules, costs (including convening Alaska educators/stakeholders), timelines, and vendor qualifications.", "document_type": "RFI"}, {"document_posted_date": "2025-11-18", "state": "IN", "name": "Indiana Department of Education", "summary": "Seeks a contractor to develop data forensic reports for the ILEARN and IREAD test administrations. Aggregate units include test session, test administrator, and school. After each assessment window ends, IDOE will send the contractor a data file. The contractor shall create both a student level and aggregate level response change report and data forensic report.", "document_type": "RFP"}, {"document_posted_date": "2025-11-10", "state": "MO", "name": "Missouri Department of Elementary and Secondary Education", "summary": "Request for Proposal (RFP) issued by the Missouri Department of Elementary and Secondary Education for the Missouri Foundational Reading Assessment Qualified Vendor List (QVL). The solicitation opened on November 12, 2025, and closes on November 26, 2025. It aims to create a qualified vendor list for foundational reading assessment solutions.", "document_type": "RFP"}, {"document_posted_date": "2025-11-05", "state": "MS", "name": "Mississippi Department of Education", "summary": "Qualified, experienced, responsible and financially sound Offerors to provide a Kindergarten Readiness Assessment.", "document_type": "RFP"}, {"document_posted_date": "2025-12-14", "state": "MA", "name": "Massachusetts Department of Elementary and Secondary Education", "summary": "The Massachusetts Department of Elementary and Secondary Education (DESE) is soliciting a qualified simulation developer to create simulations and interactive elements to replace existing interactions in classroom STE performance assessment tasks. Deliverables include a detailed project plan, timeline, budget, monthly progress reports, data collection/interim memos, and draft/final reports, and the simulations must meet accessibility and student-privacy requirements. The contract is expected to commence upon approval, run through June 30, 2027 (with potential renewal up to 12 months), and the work will be performed primarily in Massachusetts.", "document_type": "Unknown"}, {"document_posted_date": "2025-12-16", "state": "MA", "name": "Massachusetts Department of Elementary and Secondary Education", "summary": "The Massachusetts Department of Elementary and Secondary Education (DESE) Office for Food and Nutrition Programs (FNP) is posting this RFR and seeking a vendor to provide updates on the strength checklist and implementation assessment for the Massachusetts Local Wellness Policy Assessment Tool. Tasks include revising the project plan, providing regular status updates and monthly progress reports, collecting data through key informant interviews, surveys and school site visits, and drafting year\u2011end and interim reports. The period of performance begins upon approval and is expected to run through June 30, 2026, with potential renewal options for up to 12 months.", "document_type": "Unknown"}, {"document_posted_date": "2025-12-08", "state": "UT", "name": "Utah Department of Workforce Services", "summary": "The State of Utah Department of Workforce Services (DWS) issued an RFSQ (MK269) to procure a design professional/service provider to deliver Pre-Employment Transition Services (Pre-ETS) evaluation and data management, including an online evaluation platform with uniform survey tools and pre/post assessments. The contractor must support at least 20 user log-ins, provide administrative access for DWS-USOR staff, and meet Section 508 accessibility and cybersecurity requirements. Vendors will be evaluated on technical experience with Pre-ETS services, survey creation, data management, and testing methodology, with selection based on scored qualifications and subsequent negotiation of compensation.", "document_type": "RFS"}, {"document_posted_date": "2025-12-08", "state": "UT", "name": "Utah Dept. of Workforce Services", "summary": "The State of Utah Department of Workforce Services (DWS) issued an RFSQ (MK269) to procure a design professional/service provider to deliver Pre-Employment Transition Services (Pre-ETS) evaluation and data management, including an online evaluation platform with uniform survey tools and pre/post assessments. The contractor must support at least 20 user log-ins, provide administrative access for DWS-USOR staff, and meet Section 508 accessibility and cybersecurity requirements. Vendors will be evaluated on technical experience with Pre-ETS services, survey creation, data management, and testing methodology, with selection based on scored qualifications and subsequent negotiation of compensation.", "document_type": "RFS"}, {"document_posted_date": "2025-11-13", "state": "TX", "name": "Texas Health and Human Services Commission", "summary": "Texas Health and Human Services Commission is soliciting bids for Developmental Assessment of Young Children, Second Edition (DAYC-2) forms for Early Childhood Intervention subrecipients. Responses are due December 4, 2025 at 10:30 AM CT.", "document_type": "RFP"}, {"document_posted_date": "2025-12-14", "state": "MA", "name": "Massachusetts Department of Elementary and Secondary Education", "summary": "The Massachusetts Department of Elementary and Secondary Education (DESE) is soliciting a qualified simulation developer to create simulations and interactive elements to replace existing interactions in classroom STE performance assessment tasks. Deliverables include a detailed project plan, timeline, budget, monthly progress reports, data collection/interim memos, and draft/final reports, and the simulations must meet accessibility and student-privacy requirements. The contract is expected to commence upon approval, run through June 30, 2027 (with potential renewal up to 12 months), and the work will be performed primarily in Massachusetts.", "document_type": "Unknown"}, {"document_posted_date": "2025-12-16", "state": "MA", "name": "Massachusetts Department of Elementary and Secondary Education", "summary": "The Massachusetts Department of Elementary and Secondary Education (DESE) Office for Food and Nutrition Programs (FNP) is posting this RFR and seeking a vendor to provide updates on the strength checklist and implementation assessment for the Massachusetts Local Wellness Policy Assessment Tool. Tasks include revising the project plan, providing regular status updates and monthly progress reports, collecting data through key informant interviews, surveys and school site visits, and drafting year\u2011end and interim reports. The period of performance begins upon approval and is expected to run through June 30, 2026, with potential renewal options for up to 12 months.", "document_type": "RFR"}, {"document_posted_date": "2025-12-17", "state": "CA", "name": "California Department of Education", "summary": "Procurement of an assessment contractor for the implementation, development, administration, scoring, analysis, reporting, and technology solutions for the California Assessment System, including CAASPP and ELPAC assessments.", "document_type": "RFS"}, {"document_posted_date": "2025-12-16", "state": "MA", "name": "Massachusetts Department of Criminal Justice Information Services", "summary": "The Massachusetts Department of Elementary and Secondary Education (DESE) Office for Food and Nutrition Programs (FNP) is posting this RFR and seeking a vendor to provide updates on the strength checklist and implementation assessment for the Massachusetts Local Wellness Policy Assessment Tool. Tasks include revising the project plan, providing regular status updates and monthly progress reports, collecting data through key informant interviews, surveys and school site visits, and drafting year\u2011end and interim reports. The period of performance begins upon approval and is expected to run through June 30, 2026, with potential renewal options for up to 12 months.", "document_type": "Unknown"}, {"document_posted_date": "2025-12-14", "state": "MA", "name": "Massachusetts Department of Criminal Justice Information Services", "summary": "The Massachusetts Department of Elementary and Secondary Education (DESE) is soliciting a qualified simulation developer to create simulations and interactive elements to replace existing interactions in classroom STE performance assessment tasks. Deliverables include a detailed project plan, timeline, budget, monthly progress reports, data collection/interim memos, and draft/final reports, and the simulations must meet accessibility and student-privacy requirements. The contract is expected to commence upon approval, run through June 30, 2027 (with potential renewal up to 12 months), and the work will be performed primarily in Massachusetts.", "document_type": "RFR"}, {"document_posted_date": "2025-12-08", "state": "NC", "name": "North Carolina Dept. of Health & Human Services, Office of Procurement and Contracting Services", "summary": "Purchase a comprehensive, evidence-based, and integrated early childhood curriculum platform. The platform must incorporate an approved curriculum, a formative assessment tool, and a robust family engagement component", "document_type": "RFP"}, {"document_posted_date": "2025-12-08", "state": "NC", "name": "North Carolina Division of Child Development and Early Education", "summary": "North Carolina DHHS (Division of Child Development and Early Education) issued an RFI to gather information on a comprehensive, evidence-based early childhood curriculum platform that integrates an approved curriculum, a formative assessment tool, and family engagement features aligned to NC Foundations for Early Learning and Development. The platform must support digital access to curriculum resources, ongoing formative assessment across 38 developmental objectives, and robust family engagement with communication and data-tracking capabilities. Responses are intended to inform a future procurement; vendors must demonstrate capacity to onboard NC Pre-K programs quickly and support approximately 4,330 educators.", "document_type": "RFI"}, {"document_posted_date": "2025-11-30", "state": "AK", "name": "State of Alaska, Office of Procurement and Property Management (OPPM), Dept of Administration (DOA)", "summary": "The State of Alaska seeks vendor input to develop a statewide comparative government and civics education curriculum, a civics assessment, and a civics project-based assessment, including proposed project schedules, costs (including convening Alaska educators/stakeholders), timelines, and vendor qualifications.", "document_type": "RFI"}, {"document_posted_date": "2025-11-24", "state": "MT", "name": "Montana of Dept. of Administration, General Services Division", "summary": "Technical guidance to OPI for MAST assessment. Drafting new business roles for the federal accountability. There are two workstreams that must be completed by January 1, 2027. Workstream 1 Assessment: Regular meetings, MAST Support, development of professional development materials for that assessment audit learning module, presentations to stakeholder groups, evaluation plans, and stakeholder engagement activities. In addition, there needs to be technical support for OPI to develop one or more \u201cuse cases' around growth and how the growth metric will support the field. Workstream 2 Accountability: Regular meetings, provide technical support for OPI to implement the processes and procedures involved in calculating Additional Targeted Support and Improvement (ATSI), develop written rules based on OPI provided documentation, provide a template for technical documentation needed for the federal accountability system, using the skip-year growth model.", "document_type": "RFP"}, {"document_posted_date": "2025-11-20", "state": "IL", "name": "Illinois Dept. of Corrections - Hill Correctional Center", "summary": "To provide advanced & reliable electronic testing system for delivery of Adult Education High School Equivalency testing. The contract will have an initial term of 5 years.", "document_type": "RFP"}, {"document_posted_date": "2025-11-18", "state": "IN", "name": "Indiana Dept. of Education", "summary": "Seeks a contractor to develop data forensic reports for the ILEARN and IREAD test administrations. Aggregate units include test session, test administrator, and school. After each assessment window ends, IDOE will send the contractor a data file. The contractor shall create both a student level and aggregate level response change report and data forensic report.", "document_type": "RFP"}, {"document_posted_date": "2025-11-13", "state": "TX", "name": "Texas Department of State Health Services (HHS)", "summary": "Provide developmental assessment services for young children, second edition (dayc-2).", "document_type": "RFP"}, {"document_posted_date": "2025-11-10", "state": "MO", "name": "Missouri Department of Elementary and Secondary Education", "summary": "Request for Proposal (RFP) issued by the Missouri Department of Elementary and Secondary Education for the Missouri Foundational Reading Assessment Qualified Vendor List (QVL). The solicitation opened on November 12, 2025, and closes on November 26, 2025. It aims to create a qualified vendor list for foundational reading assessment solutions.", "document_type": "RFP"}, {"document_posted_date": "2025-11-10", "state": "VA", "name": "Southern Virginia Higher Education Center (SVHEC)", "summary": "To conduct a comprehensive, data-driven assessment of the commonwealth of virginia's future workforce needs for engineers with graduate-level education.", "document_type": "Unknown"}, {"document_posted_date": "2025-11-09", "state": "MI", "name": "Michigan Dept. of Health & Human Services", "summary": "Provision of michigan-specific assessment tool development and training.", "document_type": "Unknown"}, {"document_posted_date": "2025-11-06", "state": "AR", "name": "Salt River Pima-Maricopa Indian Community", "summary": "Provides psycho-educational assessments of students, interpret psycho-educational assessment results and determine qualification for special education services. Participates in the assessment, diagnosis, and planning for special needs students. Develops student goals/objectives and consult with teachers, administrators, and related service providers on an ongoing basis to monitor the educational program. Participates on a multidisciplinary team in the development of IEP and facilitate IEP meetings, as required; Provides written reports analyzing, interpreting and summarizing test results, observations and information from school personnel, students and parents Counsels individuals and groups of students as required by IEP or for assessment purposes Collaborates with other program support service staff and other public and private agencies Interact with staff from student's school district of residence around IEP issues, changes of placement, and other appropriate issues Evaluates and assesses students when required during a disciplinary dispute (suspension and/or expulsion) Participates in due process procedures as required.", "document_type": "RFP"}, {"document_posted_date": "2025-11-05", "state": "MS", "name": "Mississippi Dept. of Education", "summary": "Qualified, experienced, responsible and financially sound Offerors to provide a Kindergarten Readiness Assessment.", "document_type": "RFP"}, {"document_posted_date": "2025-11-03", "state": "FL", "name": "Florida Department of Revenue", "summary": "Seeking information from vendors who can provide the following services, related services, and/or desirable options. 1. . Online testing hosting platform 2. Ability to integrate with live proctoring service. 3. Ability to host training content. 4. Ability to setup sequential learning experiences. 5 customizable certificates 6 self-registration option 7 ability to setup user groups 8 secure platform", "document_type": "RFI"}]
+</script>
+
+<script>
+(function(){
+  const raw = JSON.parse(document.getElementById("reportData").textContent || "[]");
+
+  const monthSelect = document.getElementById("monthSelect");
+  const kpiGrid = document.getElementById("kpiGrid");
+  const tableMount = document.getElementById("tableMount");
+  const windowLabel = document.getElementById("windowLabel");
+
+  const ym = d => d ? d.slice(0,7) : "";
+
+  function uniq(a){ return [...new Set(a)]; }
+
+  function renderKPIs(rows){
+    const states = new Set(rows.map(r => (r.state || "").trim()).filter(Boolean));
+    kpiGrid.innerHTML = `
+      <div class="card"><div class="label">Documents posted</div><div class="value">${rows.length}</div></div>
+      <div class="card"><div class="label">States represented</div><div class="value">${states.size}</div></div>
+    `;
+  }
+
+  function escapeHTML(s){
+    return String(s ?? "")
+      .replace(/&/g,"&amp;")
+      .replace(/</g,"&lt;")
+      .replace(/>/g,"&gt;")
+      .replace(/"/g,"&quot;")
+      .replace(/'/g,"&#039;");
+  }
+
+  // Summary: ALWAYS FULL (no click, no truncation)
+  function renderTable(rows){
+    tableMount.innerHTML = `
+      <table>
+        <thead><tr>
+          <th>Document Posted Date</th>
+          <th>State</th>
+          <th>Name</th>
+          <th>Summary</th>
+          <th>Document Type</th>
+        </tr></thead>
+        <tbody>
+          ${rows.slice(0,500).map(r => `
+            <tr>
+              <td>${escapeHTML(r.document_posted_date||"")}</td>
+              <td>${escapeHTML(r.state||"")}</td>
+              <td>${escapeHTML(r.name||"")}</td>
+              <td class="summary-cell">${escapeHTML(r.summary||"")}</td>
+              <td>${escapeHTML(r.document_type||"")}</td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>`;
+  }
+
+  function countTop(arr,n){
+    const m={};
+    arr.forEach(x=>{
+      const k = (x || "").trim();
+      if(k) m[k]=(m[k]||0)+1
+    });
+    return Object.entries(m).sort((a,b)=>b[1]-a[1]).slice(0,n);
+  }
+
+  // CEMD palette for charts
+  const CEMD = {
+    primary: "#29264B",
+    carbon:  "#414042",
+    orchid:  "#7C3AED",
+    mango:   "#F59E0B",
+    teal:    "#0EA5A4",
+    slate:   "#64748B"
+  };
+
+  function palette(n){
+    const base = [CEMD.primary, CEMD.teal, CEMD.mango, CEMD.orchid, CEMD.slate, CEMD.carbon];
+    const out = [];
+    for(let i=0;i<n;i++) out.push(base[i % base.length]);
+    return out;
+  }
+
+  let barChart, pieChart;
+
+  function renderCharts(rows){
+    const states = countTop(rows.map(r=>r.state),10);
+    const types  = countTop(rows.map(r=>r.document_type),10);
+
+    const stateLabels = states.map(x=>x[0]);
+    const stateVals   = states.map(x=>x[1]);
+
+    const typeLabels  = types.map(x=>x[0]);
+    const typeVals    = types.map(x=>x[1]);
+
+    // BAR
+    if(!barChart){
+      barChart = new Chart(stateBar, {
+        type:"bar",
+        data:{
+          labels: stateLabels,
+          datasets:[{
+            label:"Documents",
+            data: stateVals,
+            backgroundColor: CEMD.primary
+          }]
+        },
+        options:{
+          responsive:true,
+          maintainAspectRatio:false,
+          plugins:{
+            legend:{ display:false },
+            tooltip:{ enabled:true }
+          },
+          scales:{
+            x:{ ticks:{ color:CEMD.carbon }, grid:{ display:false } },
+            y:{ ticks:{ color:CEMD.carbon }, grid:{ color:"rgba(65,64,66,0.15)" } }
+          }
+        }
+      });
+    } else {
+      barChart.data.labels = stateLabels;
+      barChart.data.datasets[0].data = stateVals;
+      barChart.update();
+    }
+
+    // PIE
+    const colors = palette(typeLabels.length);
+    if(!pieChart){
+      pieChart = new Chart(typePie, {
+        type:"pie",
+        data:{
+          labels: typeLabels,
+          datasets:[{
+            data: typeVals,
+            backgroundColor: colors,
+            borderColor: "#ffffff",
+            borderWidth: 2
+          }]
+        },
+        options:{
+          responsive:true,
+          maintainAspectRatio:false,
+          plugins:{
+            legend:{
+              position:"bottom",
+              labels:{ color:CEMD.carbon, boxWidth:12, font:{ family:"Montserrat" } }
+            },
+            tooltip:{ enabled:true }
+          }
+        }
+      });
+    } else {
+      pieChart.data.labels = typeLabels;
+      pieChart.data.datasets[0].data = typeVals;
+      pieChart.data.datasets[0].backgroundColor = colors;
+      pieChart.update();
+    }
+  }
+
+  function applyMonth(m){
+    const rows = raw.filter(r=>ym(r.document_posted_date)===m);
+
+    // dedupe by (date, name)
+    const seen = new Set();
+    const dedup = [];
+    rows.forEach(r=>{
+      const d = (r.document_posted_date||"").trim();
+      const n = (r.name||"").trim();
+      if(!d || !n) return;
+      const k = d + "|" + n;
+      if(seen.has(k)) return;
+      seen.add(k);
+      dedup.push(r);
+    });
+
+    renderKPIs(dedup);
+    renderCharts(dedup);
+    renderTable(dedup);
+  }
+
+  const months = uniq(raw.map(r=>ym(r.document_posted_date)).filter(Boolean)).sort();
+  monthSelect.innerHTML = months.map(m=>`<option>${m}</option>`).join("");
+  monthSelect.value = months.at(-1);
+  applyMonth(monthSelect.value);
+  monthSelect.onchange = ()=>applyMonth(monthSelect.value);
+})();
+</script>
+</body>
+</html>
