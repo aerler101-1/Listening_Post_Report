@@ -3,10 +3,11 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Listening Report</title>
+<title>SEA Assessment Signals</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
 
 <style>
 :root {
@@ -36,12 +37,21 @@ table{width:100%;border-collapse:collapse;}
 th,td{padding:10px;border-bottom:1px solid #ddd;text-align:left;vertical-align:top;}
 th{position:sticky;top:0;background:#fff;color:var(--accent);font-weight:700;}
 .summary-cell{white-space: normal; line-height: 1.45; color: var(--text);}
+
+.badge{
+  display:inline-block;
+  padding:3px 8px;
+  border-radius:999px;
+  font-weight:700;
+  font-size:12px;
+}
 </style>
 </head>
 
 <body>
 <div class="wrap">
-  <h1 style="margin:0;color:var(--accent);font-size:22px;font-weight:700;">SEA Assessment Updates</h1>
+  <h1 style="margin:0;color:var(--accent);font-size:22px;font-weight:700;">SEA Assessment Signals</h1>
+  <div id="summaryLine" style="margin-top:6px;color:var(--muted);font-weight:600;"></div>
 
   <div class="panel">
     <strong style="color:var(--muted);">Month</strong>
@@ -62,7 +72,7 @@ th{position:sticky;top:0;background:#fff;color:var(--accent);font-weight:700;}
     <div class="table-wrap" id="tableMount"></div>
   </div>
 
-  <small style="display:block;margin-top:12px;color:var(--muted);font-weight:600;">Generated: 2025-12-22 13:10</small>
+  <small style="display:block;margin-top:12px;color:var(--muted);font-weight:600;">Generated: 2025-12-22 14:26</small>
 </div>
 
 <script type="application/json" id="reportData">
@@ -77,18 +87,11 @@ th{position:sticky;top:0;background:#fff;color:var(--accent);font-weight:700;}
   const kpiGrid = document.getElementById("kpiGrid");
   const tableMount = document.getElementById("tableMount");
   const windowLabel = document.getElementById("windowLabel");
+  const summaryLine = document.getElementById("summaryLine");
 
   const ym = d => d ? d.slice(0,7) : "";
 
   function uniq(a){ return [...new Set(a)]; }
-
-  function renderKPIs(rows){
-    const states = new Set(rows.map(r => (r.state || "").trim()).filter(Boolean));
-    kpiGrid.innerHTML = `
-      <div class="card"><div class="label">Documents posted</div><div class="value">${rows.length}</div></div>
-      <div class="card"><div class="label">States represented</div><div class="value">${states.size}</div></div>
-    `;
-  }
 
   function escapeHTML(s){
     return String(s ?? "")
@@ -97,6 +100,141 @@ th{position:sticky;top:0;background:#fff;color:var(--accent);font-weight:700;}
       .replace(/>/g,"&gt;")
       .replace(/"/g,"&quot;")
       .replace(/'/g,"&#039;");
+  }
+
+  // ---- CEMD palette + consistent TYPE->COLOR mapping ----
+  const CEMD = {
+    primary: "#04B1DC",
+    carbon:  "#414042",
+    orchid:  "#7570A2",
+    mango:   "#F2692A",
+    teal:    "#128DAC",
+    slate:   "#29264B",
+    naranjaA11Y: "#C85000" // Not specified
+  };
+
+  const BASE_COLORS = [CEMD.slate, CEMD.orchid, CEMD.mango, CEMD.primary, CEMD.teal, CEMD.carbon];
+
+  function hashStr(s){
+    s = String(s || "");
+    let h = 0;
+    for (let i=0;i<s.length;i++){
+      h = ((h<<5) - h) + s.charCodeAt(i);
+      h |= 0;
+    }
+    return Math.abs(h);
+  }
+
+  function normTypeLabel(x){
+    const s = String(x ?? "").trim();
+    if (!s) return "Not specified";
+    if (s.toLowerCase() === "unknown") return "Not specified";
+    return s;
+  }
+
+  // IMPORTANT: Not specified has its own dedicated color
+  function colorForType(label){
+    if (label === "Not specified") return CEMD.naranjaA11Y;
+    const idx = hashStr(label) % BASE_COLORS.length;
+    return BASE_COLORS[idx];
+  }
+
+  function colorsForLabels(labels){
+    return labels.map(l => colorForType(l));
+  }
+
+  function countTop(arr,n){
+    const m={};
+    arr.forEach(x=>{
+      const k = String(x || "").trim();
+      if(k) m[k]=(m[k]||0)+1
+    });
+    return Object.entries(m).sort((a,b)=>b[1]-a[1]).slice(0,n);
+  }
+
+  function dedupeRows(rows){
+    const seen = new Set();
+    const out = [];
+    rows.forEach(r=>{
+      const d = String(r.document_posted_date||"").trim();
+      const n = String(r.name||"").trim();
+      if(!d || !n) return;
+      const k = d + "|" + n;
+      if(seen.has(k)) return;
+      seen.add(k);
+      out.push(r);
+    });
+    return out;
+  }
+
+  function prevMonthKey(yyyymm){
+    const [y, m] = yyyymm.split("-").map(n => parseInt(n,10));
+    const d = new Date(y, (m - 1) - 1, 1);
+    const yy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    return `${yy}-${mm}`;
+  }
+
+  function monthRange(yyyymm){
+    const [y, m] = yyyymm.split("-").map(n => parseInt(n,10));
+    const start = new Date(y, m-1, 1);
+    const end = new Date(y, m, 0);
+    return { start, end };
+  }
+
+  function fmtDate(d){
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+  }
+
+  function monthRangeLabel(yyyymm){
+    const { start, end } = monthRange(yyyymm);
+    const monthName = start.toLocaleString(undefined, { month: "short" });
+    return `${monthName} ${start.getFullYear()} (${fmtDate(start)} to ${fmtDate(end)})`;
+  }
+
+  function calcMetrics(rows){
+    const docs = rows.length;
+    const states = new Set(rows.map(r => String(r.state||"").trim()).filter(Boolean)).size;
+    return { docs, states };
+  }
+
+  function fmtDelta(x){ return x > 0 ? `+${x}` : `${x}`; }
+
+  function deltaBadgeHTML(delta){
+    let style;
+    if (delta > 0) style = "background:rgba(18,141,172,.12);color:#128DAC;border:1px solid rgba(18,141,172,.28);";
+    else if (delta < 0) style = "background:rgba(242,105,42,.10);color:#F2692A;border:1px solid rgba(242,105,42,.25);";
+    else style = "background:rgba(65,64,66,.08);color:#414042;border:1px solid rgba(65,64,66,.18);";
+    return `<span class="badge" style="${style}">${fmtDelta(delta)} vs prior month</span>`;
+  }
+
+  function renderKPIs(curr, prev){
+    const dDocs = curr.docs - prev.docs;
+    const dStates = curr.states - prev.states;
+
+    kpiGrid.innerHTML = `
+      <div class="card">
+        <div class="label">Documents posted</div>
+        <div style="display:flex;align-items:baseline;gap:10px;">
+          <div class="value">${curr.docs}</div>
+          ${deltaBadgeHTML(dDocs)}
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="label">States represented</div>
+        <div style="display:flex;align-items:baseline;gap:10px;">
+          <div class="value">${curr.states}</div>
+          ${deltaBadgeHTML(dStates)}
+        </div>
+      </div>
+    `;
+  }
+
+  // Summary line: no deltas (keep deltas in the KPI pills only)
+  function renderSummaryLine(monthKey, curr){
+    summaryLine.textContent =
+      `${monthRangeLabel(monthKey)} • ${curr.docs} documents • ${curr.states} states`;
   }
 
   function renderTable(rows){
@@ -116,61 +254,20 @@ th{position:sticky;top:0;background:#fff;color:var(--accent);font-weight:700;}
               <td>${escapeHTML(r.state||"")}</td>
               <td>${escapeHTML(r.name||"")}</td>
               <td class="summary-cell">${escapeHTML(r.summary||"")}</td>
-              <td>${escapeHTML(r.document_type||"")}</td>
+              <td>${escapeHTML(normTypeLabel(r.document_type))}</td>
             </tr>
           `).join("")}
         </tbody>
       </table>`;
   }
 
-  function countTop(arr,n){
-    const m={};
-    arr.forEach(x=>{
-      const k = (x || "").trim();
-      if(k) m[k]=(m[k]||0)+1
-    });
-    return Object.entries(m).sort((a,b)=>b[1]-a[1]).slice(0,n);
-  }
-
-  // ---- CEMD palette + consistent TYPE->COLOR mapping ----
-  const CEMD = {
-    primary: "#04B1DC",
-    carbon:  "#414042",
-    orchid:  "#7570A2",
-    mango:   "#F2692A",
-    teal:    "#128DAC",
-    slate:   "#29264B"
-  };
-
-  const BASE_COLORS = [CEMD.primary, CEMD.teal, CEMD.mango, CEMD.orchid, CEMD.slate, CEMD.carbon];
-
-  // Deterministic string hash -> stable index
-  function hashStr(s){
-    s = String(s || "");
-    let h = 0;
-    for (let i=0;i<s.length;i++){
-      h = ((h<<5) - h) + s.charCodeAt(i);
-      h |= 0; // 32-bit
-    }
-    return Math.abs(h);
-  }
-
-  // Stable color for a given document_type label
-  function colorForType(label){
-    const idx = hashStr(label) % BASE_COLORS.length;
-    return BASE_COLORS[idx];
-  }
-
-  // Build colors aligned to labels; stable month-to-month
-  function colorsForLabels(labels){
-    return labels.map(l => colorForType(l));
-  }
-
   let barChart, pieChart;
 
   function renderCharts(rows){
     const states = countTop(rows.map(r=>r.state),10);
-    const types  = countTop(rows.map(r=>r.document_type),50); // allow more types, still stable colors
+
+    // normalize types BEFORE counting so "Unknown"/blank collapses into "Not specified"
+    const types  = countTop(rows.map(r=>normTypeLabel(r.document_type)),50);
 
     const stateLabels = states.map(x=>x[0]);
     const stateVals   = states.map(x=>x[1]);
@@ -178,7 +275,7 @@ th{position:sticky;top:0;background:#fff;color:var(--accent);font-weight:700;}
     const typeLabels  = types.map(x=>x[0]);
     const typeVals    = types.map(x=>x[1]);
 
-    // BAR (single color ok)
+    // BAR
     if(!barChart){
       barChart = new Chart(stateBar, {
         type:"bar",
@@ -206,12 +303,13 @@ th{position:sticky;top:0;background:#fff;color:var(--accent);font-weight:700;}
       barChart.update();
     }
 
-    // PIE (consistent colors by type label)
+    // PIE (consistent colors by type label + % inside slices)
     const bgColors = colorsForLabels(typeLabels);
 
     if(!pieChart){
       pieChart = new Chart(typePie, {
         type:"pie",
+        plugins: [ChartDataLabels],
         data:{
           labels: typeLabels,
           datasets:[{
@@ -229,7 +327,18 @@ th{position:sticky;top:0;background:#fff;color:var(--accent);font-weight:700;}
               position:"bottom",
               labels:{ color:CEMD.carbon, boxWidth:12, font:{ family:"Montserrat" } }
             },
-            tooltip:{ enabled:true }
+            tooltip:{ enabled:true },
+            datalabels:{
+              color:"#ffffff",
+              font:{ weight:"700", family:"Montserrat" },
+              formatter: (value, ctx) => {
+                const data = ctx.chart.data.datasets[0].data || [];
+                const sum = data.reduce((a,b)=>a + (Number(b)||0), 0);
+                if(!sum) return "";
+                const pct = (value / sum) * 100;
+                return pct >= 5 ? `${pct.toFixed(0)}%` : "";
+              }
+            }
           }
         }
       });
@@ -242,24 +351,21 @@ th{position:sticky;top:0;background:#fff;color:var(--accent);font-weight:700;}
   }
 
   function applyMonth(m){
-    const rows = raw.filter(r=>ym(r.document_posted_date)===m);
+    const prevM = prevMonthKey(m);
 
-    // dedupe by (date, name)
-    const seen = new Set();
-    const dedup = [];
-    rows.forEach(r=>{
-      const d = (r.document_posted_date||"").trim();
-      const n = (r.name||"").trim();
-      if(!d || !n) return;
-      const k = d + "|" + n;
-      if(seen.has(k)) return;
-      seen.add(k);
-      dedup.push(r);
-    });
+    const currRows = dedupeRows(raw.filter(r=>ym(r.document_posted_date)===m));
+    const prevRows = dedupeRows(raw.filter(r=>ym(r.document_posted_date)===prevM));
 
-    renderKPIs(dedup);
-    renderCharts(dedup);
-    renderTable(dedup);
+    const currMetrics = calcMetrics(currRows);
+    const prevMetrics = calcMetrics(prevRows);
+
+    windowLabel.textContent = monthRangeLabel(m);
+
+    renderKPIs(currMetrics, prevMetrics);
+    renderSummaryLine(m, currMetrics);
+
+    renderCharts(currRows);
+    renderTable(currRows);
   }
 
   const months = uniq(raw.map(r=>ym(r.document_posted_date)).filter(Boolean)).sort();
