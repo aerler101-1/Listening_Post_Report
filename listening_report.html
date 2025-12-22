@@ -16,23 +16,13 @@
   --text:#414042;
   --accent:#29264B;
   --border:#e7f4f7;
-
-  /* CEMD-ish palette (adjust here if you have exact hexes) */
-  --cemd-accent:#29264B;  /* primary */
-  --cemd-carbon:#414042;  /* text */
-  --cemd-orchid:#7C3AED;  /* accent 2 */
-  --cemd-mango:#F59E0B;   /* accent 3 */
-  --cemd-teal:#0EA5A4;    /* accent 4 */
-  --cemd-slate:#64748B;   /* neutral */
 }
-
 html,body{
   background:var(--bg);
   color:var(--text);
   font-family:'Montserrat', system-ui, sans-serif;
   margin:0;
 }
-
 .wrap{max-width:1200px;margin:24px auto;padding:0 16px 40px;}
 .panel{background:var(--card);border-radius:16px;padding:16px;box-shadow:0 8px 20px rgba(0,0,0,.25);margin-top:16px;}
 .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:12px;margin-top:16px;}
@@ -45,12 +35,7 @@ html,body{
 table{width:100%;border-collapse:collapse;}
 th,td{padding:10px;border-bottom:1px solid #ddd;text-align:left;vertical-align:top;}
 th{position:sticky;top:0;background:#fff;color:var(--accent);font-weight:700;}
-
-.summary-cell{
-  white-space: normal;
-  line-height: 1.45;
-  color: var(--text);
-}
+.summary-cell{white-space: normal; line-height: 1.45; color: var(--text);}
 </style>
 </head>
 
@@ -77,7 +62,7 @@ th{position:sticky;top:0;background:#fff;color:var(--accent);font-weight:700;}
     <div class="table-wrap" id="tableMount"></div>
   </div>
 
-  <small style="display:block;margin-top:12px;color:var(--muted);font-weight:600;">Generated: 2025-12-22 11:43</small>
+  <small style="display:block;margin-top:12px;color:var(--muted);font-weight:600;">Generated: 2025-12-22 12:02</small>
 </div>
 
 <script type="application/json" id="reportData">
@@ -114,7 +99,6 @@ th{position:sticky;top:0;background:#fff;color:var(--accent);font-weight:700;}
       .replace(/'/g,"&#039;");
   }
 
-  // Summary: ALWAYS FULL (no click, no truncation)
   function renderTable(rows){
     tableMount.innerHTML = `
       <table>
@@ -148,7 +132,7 @@ th{position:sticky;top:0;background:#fff;color:var(--accent);font-weight:700;}
     return Object.entries(m).sort((a,b)=>b[1]-a[1]).slice(0,n);
   }
 
-  // CEMD palette for charts
+  // ---- CEMD palette + consistent TYPE->COLOR mapping ----
   const CEMD = {
     primary: "#29264B",
     carbon:  "#414042",
@@ -158,18 +142,35 @@ th{position:sticky;top:0;background:#fff;color:var(--accent);font-weight:700;}
     slate:   "#64748B"
   };
 
-  function palette(n){
-    const base = [CEMD.primary, CEMD.teal, CEMD.mango, CEMD.orchid, CEMD.slate, CEMD.carbon];
-    const out = [];
-    for(let i=0;i<n;i++) out.push(base[i % base.length]);
-    return out;
+  const BASE_COLORS = [CEMD.primary, CEMD.teal, CEMD.mango, CEMD.orchid, CEMD.slate, CEMD.carbon];
+
+  // Deterministic string hash -> stable index
+  function hashStr(s){
+    s = String(s || "");
+    let h = 0;
+    for (let i=0;i<s.length;i++){
+      h = ((h<<5) - h) + s.charCodeAt(i);
+      h |= 0; // 32-bit
+    }
+    return Math.abs(h);
+  }
+
+  // Stable color for a given document_type label
+  function colorForType(label){
+    const idx = hashStr(label) % BASE_COLORS.length;
+    return BASE_COLORS[idx];
+  }
+
+  // Build colors aligned to labels; stable month-to-month
+  function colorsForLabels(labels){
+    return labels.map(l => colorForType(l));
   }
 
   let barChart, pieChart;
 
   function renderCharts(rows){
     const states = countTop(rows.map(r=>r.state),10);
-    const types  = countTop(rows.map(r=>r.document_type),10);
+    const types  = countTop(rows.map(r=>r.document_type),50); // allow more types, still stable colors
 
     const stateLabels = states.map(x=>x[0]);
     const stateVals   = states.map(x=>x[1]);
@@ -177,7 +178,7 @@ th{position:sticky;top:0;background:#fff;color:var(--accent);font-weight:700;}
     const typeLabels  = types.map(x=>x[0]);
     const typeVals    = types.map(x=>x[1]);
 
-    // BAR
+    // BAR (single color ok)
     if(!barChart){
       barChart = new Chart(stateBar, {
         type:"bar",
@@ -192,10 +193,7 @@ th{position:sticky;top:0;background:#fff;color:var(--accent);font-weight:700;}
         options:{
           responsive:true,
           maintainAspectRatio:false,
-          plugins:{
-            legend:{ display:false },
-            tooltip:{ enabled:true }
-          },
+          plugins:{ legend:{ display:false }, tooltip:{ enabled:true } },
           scales:{
             x:{ ticks:{ color:CEMD.carbon }, grid:{ display:false } },
             y:{ ticks:{ color:CEMD.carbon }, grid:{ color:"rgba(65,64,66,0.15)" } }
@@ -208,8 +206,9 @@ th{position:sticky;top:0;background:#fff;color:var(--accent);font-weight:700;}
       barChart.update();
     }
 
-    // PIE
-    const colors = palette(typeLabels.length);
+    // PIE (consistent colors by type label)
+    const bgColors = colorsForLabels(typeLabels);
+
     if(!pieChart){
       pieChart = new Chart(typePie, {
         type:"pie",
@@ -217,7 +216,7 @@ th{position:sticky;top:0;background:#fff;color:var(--accent);font-weight:700;}
           labels: typeLabels,
           datasets:[{
             data: typeVals,
-            backgroundColor: colors,
+            backgroundColor: bgColors,
             borderColor: "#ffffff",
             borderWidth: 2
           }]
@@ -237,7 +236,7 @@ th{position:sticky;top:0;background:#fff;color:var(--accent);font-weight:700;}
     } else {
       pieChart.data.labels = typeLabels;
       pieChart.data.datasets[0].data = typeVals;
-      pieChart.data.datasets[0].backgroundColor = colors;
+      pieChart.data.datasets[0].backgroundColor = bgColors;
       pieChart.update();
     }
   }
