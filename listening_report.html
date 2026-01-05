@@ -34,8 +34,33 @@ html,body{
 .chart-wrap{height:320px;background:#fff;border-radius:12px;box-shadow:0 8px 20px rgba(0,0,0,.12);padding:12px;}
 .table-wrap{max-height:60vh;overflow:auto;border-radius:12px;background:#fff;box-shadow:0 8px 20px rgba(0,0,0,.12);}
 table{width:100%;border-collapse:collapse; table-layout:fixed;}
-th,td{padding:10px;border-bottom:1px solid #ddd;text-align:left;vertical-align:top;}
-th{position:sticky;top:0;background:#fff;color:var(--accent);font-weight:700;}
+
+/* ============================
+   UPDATED: header center + bottom align
+   UPDATED: make Summary wider by shrinking Name + Type
+   ============================ */
+th,td{
+  padding:10px;
+  border-bottom:1px solid #ddd;
+  vertical-align:top;
+}
+
+/* Header: centered + bottom aligned */
+th{
+  position:sticky;
+  top:0;
+  background:#fff;
+  color:var(--accent);
+  font-weight:700;
+
+  text-align:center;
+  vertical-align:bottom;
+}
+
+/* Body cells: keep left aligned for readability */
+td{ text-align:left; }
+td.col-rel{ text-align:center; }
+
 .summary-cell{white-space: normal; line-height: 1.45; color: var(--text); word-break:break-word;}
 
 .badge{
@@ -46,13 +71,13 @@ th{position:sticky;top:0;background:#fff;color:var(--accent);font-weight:700;}
   font-size:12px;
 }
 
-/* ---- Column sizing: keep Source narrow, give Summary room ---- */
-th.col-date, td.col-date { width: 140px; }
-th.col-state, td.col-state { width: 70px; }
-th.col-name, td.col-name { width: 220px; }
-th.col-type, td.col-type { width: 150px; }
-th.col-rel,  td.col-rel  { width: 110px; text-align:center; }
-th.col-source, td.col-source { width: 120px; }
+/* ---- Column sizing: give Summary more room ---- */
+th.col-date,   td.col-date   { width: 80px; }
+th.col-state,  td.col-state  { width: 40px; }
+th.col-name,   td.col-name   { width: 110px; }   /* skinnier */
+th.col-type,   td.col-type   { width: 60px; }   /* skinnier */
+th.col-rel,    td.col-rel    { width: 100px; }
+th.col-source, td.col-source { width: 110px; }   /* skinnier */
 
 /* Let Summary flex (no fixed width) */
 td.col-source, td.col-name { word-break: break-word; }
@@ -91,7 +116,7 @@ td.col-source, td.col-name { word-break: break-word; }
     <div class="table-wrap" id="tableMount"></div>
   </div>
 
-  <small style="display:block;margin-top:12px;color:var(--muted);font-weight:600;">Generated: 2026-01-05 10:58</small>
+  <small style="display:block;margin-top:12px;color:var(--muted);font-weight:600;">Generated: 2026-01-05 14:57</small>
 </div>
 
 <script type="application/json" id="reportData">
@@ -294,7 +319,7 @@ td.col-source, td.col-name { word-break: break-word; }
           <th class="col-date">Document Posted Date</th>
           <th class="col-state">State</th>
           <th class="col-name">Name</th>
-          <th>Summary</th>
+          <th class="col-summary">Summary</th>
           <th class="col-type">Document Type</th>
           <th class="col-rel">Relevance</th>
           <th class="col-source">Source</th>
