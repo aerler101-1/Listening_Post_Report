@@ -89,18 +89,56 @@ td.col-source, td.col-name { word-break: break-word; }
   box-shadow: 0 0 0 3px rgba(0,0,0,.04);
 }
 .rel-label{ font-weight:700; font-size:12px; color:var(--muted); }
+
+/* ============================================================
+   NEW: month summary box (static text; swaps by month)
+   ============================================================ */
+.month-summary{
+  margin-top:12px;
+  background:#fff;
+  border:1px solid #ddd;
+  border-radius:12px;
+  padding:12px 14px;
+  line-height:1.55;
+  box-shadow:0 8px 20px rgba(0,0,0,.12);
+  white-space:pre-wrap;
+}
+.month-summary .label{
+  font-size:12px;
+  color:var(--muted);
+  font-weight:700;
+  margin-bottom:6px;
+}
 </style>
 </head>
 
 <body>
 <div class="wrap">
-  <h1 style="margin:0;color:var(--accent);font-size:22px;font-weight:700;">SEA Assessment Signals</h1>
+  <h1 style="margin:0;color:var(--accent);font-size:22px;font-weight:700;">State Education Agency Assessment Signals</h1>
   <div id="summaryLine" style="margin-top:6px;color:var(--muted);font-weight:600;"></div>
 
   <div class="panel">
     <strong style="color:var(--muted);">Month</strong>
     <select id="monthSelect" style="margin-left:10px;padding:8px 10px;border-radius:10px;border:1px solid var(--border);background:#fff;color:var(--text);font-weight:600;"></select>
     <span id="windowLabel" style="margin-left:10px;color:var(--muted);font-weight:500;"></span>
+
+    <!-- NEW: static per-month summary (hard-coded; swaps by month) -->
+    <div class="month-summary" id="monthSummary">
+      <div class="label">Monthly Summary</div>
+
+      <div class="month-summary-item" data-month="2025-11">
+This monthly summary highlights publicly posted state education agency documents connected to assessment systems, including contractor procurements, board-level discussions, and approval of assessment plans or technical reports. The report reflects documentation related to assessment administration, standards alignment, and testing operations for upcoming academic cycles.
+
+The information is descriptive and serves as a reference point for understanding assessment-related activity during the reporting window.
+
+      </div>
+
+      <div class="month-summary-item" data-month="2025-12" style="display:none;">
+       This monthly summary highlights publicly posted state education agency documents connected to assessment systems, including contractor procurements, board-level discussions, and approval of assessment plans or technical reports. The report reflects documentation related to assessment administration, standards alignment, and testing operations for upcoming academic cycles.
+
+The information is descriptive and serves as a reference point for understanding assessment-related activity during the reporting window.
+      </div>
+    </div>
   </div>
 
   <div class="grid" id="kpiGrid"></div>
@@ -116,7 +154,7 @@ td.col-source, td.col-name { word-break: break-word; }
     <div class="table-wrap" id="tableMount"></div>
   </div>
 
-  <small style="display:block;margin-top:12px;color:var(--muted);font-weight:600;">Generated: 2026-01-05 15:22</small>
+  <small style="display:block;margin-top:12px;color:var(--muted);font-weight:600;">Generated: 2026-01-09 15:47</small>
 </div>
 
 <script type="application/json" id="reportData">
@@ -136,6 +174,25 @@ td.col-source, td.col-name { word-break: break-word; }
   const ym = d => d ? d.slice(0,7) : "";
 
   function uniq(a){ return [...new Set(a)]; }
+
+  // NEW: toggle ONLY the summary blocks inside #monthSummary
+  function setMonthSummary(monthKey){
+    const box = document.getElementById("monthSummary");
+    if (!box) return;
+
+    const items = box.querySelectorAll(".month-summary-item[data-month]");
+    if (!items.length) return;
+
+    let shown = false;
+    items.forEach(el => {
+      const show = el.getAttribute("data-month") === monthKey;
+      el.style.display = show ? "block" : "none";
+      if (show) shown = true;
+    });
+
+    // If no matching month, keep the box visible but empty (or you can hide it)
+    box.style.display = "block";
+  }
 
   function escapeHTML(s){
     return String(s ?? "")
@@ -467,6 +524,9 @@ td.col-source, td.col-name { word-break: break-word; }
     const prevMetrics = calcMetrics(prevRows);
 
     windowLabel.textContent = monthRangeLabel(m);
+
+    // NEW: show the correct static summary for the month
+    setMonthSummary(m);
 
     renderKPIs(currMetrics, prevMetrics);
     renderSummaryLine(m, currMetrics);
