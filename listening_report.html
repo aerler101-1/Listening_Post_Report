@@ -25,7 +25,7 @@ html,body{
   margin:0;
 }
 .wrap{max-width:1200px;margin:24px auto;padding:0 16px 40px;}
-.panel{background:var(--card);border-radius:16px;padding:16px;box-shadow:0 8px 20px rgba(0,0,0,.25);margin-top:16px;}
+.panel{background:var(--card);border-radius:16px;padding:14px;box-shadow:0 8px 20px rgba(0,0,0,.25);margin-top:16px;}
 .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:12px;margin-top:16px;}
 .card{grid-column:span 3;border-radius:16px;padding:14px;box-shadow:0 8px 20px rgba(0,0,0,.25);background:var(--card);}
 .label{font-size:12px;color:var(--muted);font-weight:600;}
@@ -35,29 +35,22 @@ html,body{
 .table-wrap{max-height:60vh;overflow:auto;border-radius:12px;background:#fff;box-shadow:0 8px 20px rgba(0,0,0,.12);}
 table{width:100%;border-collapse:collapse; table-layout:fixed;}
 
-/* ============================
-   UPDATED: header center + bottom align
-   UPDATED: make Summary wider by shrinking Name + Type
-   ============================ */
 th,td{
   padding:10px;
   border-bottom:1px solid #ddd;
   vertical-align:top;
 }
 
-/* Header: centered + bottom aligned */
 th{
   position:sticky;
   top:0;
   background:#fff;
   color:var(--accent);
   font-weight:700;
-
   text-align:center;
   vertical-align:bottom;
 }
 
-/* Body cells: keep left aligned for readability */
 td{ text-align:left; }
 td.col-rel{ text-align:center; }
 
@@ -71,18 +64,15 @@ td.col-rel{ text-align:center; }
   font-size:12px;
 }
 
-/* ---- Column sizing: give Summary more room ---- */
 th.col-date,   td.col-date   { width: 80px; }
 th.col-state,  td.col-state  { width: 40px; }
-th.col-name,   td.col-name   { width: 110px; }   /* skinnier */
-th.col-type,   td.col-type   { width: 80px; }   /* skinnier */
+th.col-name,   td.col-name   { width: 110px; }
+th.col-type,   td.col-type   { width: 80px; }
 th.col-rel,    td.col-rel    { width: 80px; }
-th.col-source, td.col-source { width: 80px; }   /* skinnier */
+th.col-source, td.col-source { width: 80px; }
 
-/* Let Summary flex (no fixed width) */
 td.col-source, td.col-name { word-break: break-word; }
 
-/* ---- Relevance dot ---- */
 .rel-wrap{ display:flex; align-items:center; justify-content:center; gap:8px; }
 .rel-dot{
   width:12px; height:12px; border-radius:999px; display:inline-block;
@@ -91,23 +81,74 @@ td.col-source, td.col-name { word-break: break-word; }
 .rel-label{ font-weight:700; font-size:12px; color:var(--muted); }
 
 /* ============================================================
-   NEW: month summary box (static text; swaps by month)
+   Month panel layout: LEFT = summary, RIGHT = KPI pills
+   ============================================================ */
+.topbar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+}
+
+.month-layout{
+  display:grid;
+  grid-template-columns: 1.35fr 0.65fr;
+  gap:12px;
+  margin-top:10px;
+  align-items:start;
+}
+
+/* KPI pills in right rail */
+.kpi-grid{
+  display:grid;
+  grid-template-columns: 1fr;
+  gap:10px;              /* tighter */
+}
+.kpi-grid .card{
+  grid-column:auto;
+  padding:12px;
+}
+
+/* ============================================================
+   TIGHT MONTH SUMMARY
+   - Title + items are in ONE container (no extra block gap)
+   - very small title-to-text spacing
+   - trims whitespace in JS
    ============================================================ */
 .month-summary{
-  margin-top:12px;
+  margin:0;
   background:#fff;
   border:1px solid #ddd;
   border-radius:12px;
-  padding:12px 14px;
-  line-height:1.55;
+  padding:8px 10px;       /* tighter padding */
   box-shadow:0 8px 20px rgba(0,0,0,.12);
+
+  max-height:220px;
+  overflow:auto;
+
+  /* Keep line breaks, but we'll trim leading whitespace in JS */
   white-space:pre-wrap;
+  line-height:1.4;
 }
-.month-summary .label{
+
+.month-summary-head{
   font-size:12px;
   color:var(--muted);
   font-weight:700;
-  margin-bottom:6px;
+  margin:0;               /* no margin */
+  padding:0;              /* no padding */
+  line-height:1.1;        /* tight */
+}
+
+/* If you want the title to feel like a header without space */
+.month-summary-head + .month-summary-item{
+  margin-top:2px;         /* tiny gap only */
+}
+
+/* Remove any default spacing */
+.month-summary-item{
+  margin:0;
+  padding:0;
 }
 </style>
 </head>
@@ -118,30 +159,51 @@ td.col-source, td.col-name { word-break: break-word; }
   <div id="summaryLine" style="margin-top:6px;color:var(--muted);font-weight:600;"></div>
 
   <div class="panel">
-    <strong style="color:var(--muted);">Month</strong>
-    <select id="monthSelect" style="margin-left:10px;padding:8px 10px;border-radius:10px;border:1px solid var(--border);background:#fff;color:var(--text);font-weight:600;"></select>
-    <span id="windowLabel" style="margin-left:10px;color:var(--muted);font-weight:500;"></span>
+    <div class="topbar">
+      <div class="month-controls">
+        <strong style="color:var(--muted);">Month</strong>
+        <select id="monthSelect" style="margin-left:10px;padding:8px 10px;border-radius:10px;border:1px solid var(--border);background:#fff;color:var(--text);font-weight:600;"></select>
+        <span id="windowLabel" style="margin-left:10px;color:var(--muted);font-weight:500;"></span>
+      </div>
+    </div>
 
-    <!-- NEW: static per-month summary (hard-coded; swaps by month) -->
-    <div class="month-summary" id="monthSummary">
-      <div class="label">Monthly Summary</div>
+    <div class="month-layout">
+      <!-- LEFT: title + month items inside one tight container -->
+      <div class="month-left">
+        <div class="month-summary" id="monthSummary"><div class="month-summary-head">Monthly Summary</div><div class="month-summary-item" data-month="2025-11">
+Three high-stakes RFPs issued this month:
+- Missouri seeking vendors for Foundational Reading Assessment Qualified Vendor List (opens Nov 12, closes Nov 26) - rapid timeline
+- Mississippi kindergarten readiness assessment - new statewide requirement
+- Alaska requesting civics education curriculum and assessment development (includes project-based assessment)
 
-      <div class="month-summary-item" data-month="2025-11">
-This monthly summary highlights publicly posted state education agency documents connected to assessment systems, including contractor procurements, board-level discussions, and approval of assessment plans or technical reports. The report reflects documentation related to assessment administration, standards alignment, and testing operations for upcoming academic cycles.
+Active decision windows: Montana securing technical guidance for MAST assessment implementation with business rules due January 2027. Nebraska authorized Commissioner to contract for 2026-27 Standard College Admission Test. Iowa board discussing revised assessment for Spring 2026 aligned to updated standards.
 
-The information is descriptive and serves as a reference point for understanding assessment-related activity during the reporting window.
+Assessment system shifts: Montana Board advancing MAST policy work with Solomon Research Group delivering assessment recommendations by late February 2026. Nevada approved i-Ready as statewide Read by Grade 3 assessment for 2025-26 and adopted regulatory changes removing individual-administration requirements. Indiana launching data forensics for ILEARN and IREAD test administrations.
 
+
+        </div><div class="month-summary-item" data-month="2025-12" style="display:none;">
+Three high-stakes RFPs issued this month:
+- California seeking comprehensive assessment contractor for CAASPP 
+  (affects 6M+ students) - major incumbent replacement opportunity
+- Kansas reading/math assessment RFP (5-year contract, starts July 2026)
+- Mississippi kindergarten readiness assessment - new requirement
+
+Active decision windows: Alaska finalizing alternate ACCESS exit 
+criteria (30-day comment period opens Dec 3), Iowa implementing 
+revised assessment for Spring 2026.
+
+Assessment system shifts: Montana's new MAST through-year system 
+went live (29,000+ testlets in week one). Nevada approved i-Ready 
+as statewide Read by Grade 3 assessment for 2025-26.
+        </div></div>
       </div>
 
-      <div class="month-summary-item" data-month="2025-12" style="display:none;">
-       This monthly summary highlights publicly posted state education agency documents connected to assessment systems, including contractor procurements, board-level discussions, and approval of assessment plans or technical reports. The report reflects documentation related to assessment administration, standards alignment, and testing operations for upcoming academic cycles.
-
-The information is descriptive and serves as a reference point for understanding assessment-related activity during the reporting window.
+      <!-- RIGHT: KPI pills -->
+      <div class="month-right">
+        <div class="kpi-grid" id="kpiGrid"></div>
       </div>
     </div>
   </div>
-
-  <div class="grid" id="kpiGrid"></div>
 
   <div class="panel">
     <div class="two-col">
@@ -154,7 +216,7 @@ The information is descriptive and serves as a reference point for understanding
     <div class="table-wrap" id="tableMount"></div>
   </div>
 
-  <small style="display:block;margin-top:12px;color:var(--muted);font-weight:600;">Generated: 2026-01-09 15:47</small>
+  <small style="display:block;margin-top:12px;color:var(--muted);font-weight:600;">Generated: 2026-01-12 10:50</small>
 </div>
 
 <script type="application/json" id="reportData">
@@ -175,7 +237,7 @@ The information is descriptive and serves as a reference point for understanding
 
   function uniq(a){ return [...new Set(a)]; }
 
-  // NEW: toggle ONLY the summary blocks inside #monthSummary
+  // Toggle only the month items; also TRIM whitespace so title-to-text is tight
   function setMonthSummary(monthKey){
     const box = document.getElementById("monthSummary");
     if (!box) return;
@@ -183,14 +245,14 @@ The information is descriptive and serves as a reference point for understanding
     const items = box.querySelectorAll(".month-summary-item[data-month]");
     if (!items.length) return;
 
-    let shown = false;
     items.forEach(el => {
+      // Critical: removes leading newline/indentation that creates big gaps in pre-wrap
+      el.textContent = (el.textContent || "").trim();
+
       const show = el.getAttribute("data-month") === monthKey;
       el.style.display = show ? "block" : "none";
-      if (show) shown = true;
     });
 
-    // If no matching month, keep the box visible but empty (or you can hide it)
     box.style.display = "block";
   }
 
@@ -214,14 +276,12 @@ The information is descriptive and serves as a reference point for understanding
     naranjaA11Y: "#C85000" // Not specified
   };
 
-  // Relevance colors (dot)
   const REL = {
     green:  "#2E7D32",
     yellow: "#F2C94C",
     red:    "#D32F2F"
   };
 
-  // UPDATED: 7 colors available for type assignment (Not specified is separate)
   const BASE_COLORS = [
     CEMD.slate,
     CEMD.orchid,
@@ -229,10 +289,9 @@ The information is descriptive and serves as a reference point for understanding
     CEMD.primary,
     CEMD.teal,
     CEMD.carbon,
-    "#6A9A1F" // extra distinct color (adjust if you want)
+    "#6A9A1F"
   ];
 
-  // UPDATED: deterministic, collision-free color assignment for pie labels
   const TYPE_COLOR_MAP = new Map();
   let nextTypeColorIdx = 0;
 
@@ -251,7 +310,6 @@ The information is descriptive and serves as a reference point for understanding
     return labels.map(colorForType);
   }
 
-  // UPDATED: normalize type labels for display (add spaces)
   function normTypeLabel(x){
     const s = String(x ?? "").trim();
     if (!s) return "Not specified";
@@ -353,19 +411,16 @@ The information is descriptive and serves as a reference point for understanding
     `;
   }
 
-  // Summary line: no deltas (keep deltas in the KPI pills only)
   function renderSummaryLine(monthKey, curr){
     summaryLine.textContent =
       `${monthRangeLabel(monthKey)} • ${curr.docs} documents • ${curr.states} states`;
   }
 
-  // Relevance (display) derived from score; score still used for sorting.
   function relevanceForScore(score){
     const s = Number(score);
     if (s === 5) return { label: "High", color: REL.green };
     if (s >= 2 && s <= 4) return { label: "Medium", color: REL.yellow };
     if (s >= 0 && s <= 1) return { label: "Low", color: REL.red };
-    // null/NaN -> bottom + muted
     return { label: "", color: "rgba(65,64,66,.25)" };
   }
 
@@ -409,8 +464,6 @@ The information is descriptive and serves as a reference point for understanding
 
   function renderCharts(rows){
     const states = countTop(rows.map(r=>r.state),10);
-
-    // normalize types BEFORE counting so "Unknown"/blank collapses into "Not Specified"
     const types  = countTop(rows.map(r=>normTypeLabel(r.document_type)),50);
 
     const stateLabels = states.map(x=>x[0]);
@@ -419,7 +472,6 @@ The information is descriptive and serves as a reference point for understanding
     const typeLabels  = types.map(x=>x[0]);
     const typeVals    = types.map(x=>x[1]);
 
-    // BAR
     if(!barChart){
       barChart = new Chart(stateBar, {
         type:"bar",
@@ -457,7 +509,6 @@ The information is descriptive and serves as a reference point for understanding
       barChart.update();
     }
 
-    // PIE (now collision-free colors by type label + % inside slices)
     const bgColors = colorsForLabels(typeLabels);
 
     if(!pieChart){
@@ -517,7 +568,6 @@ The information is descriptive and serves as a reference point for understanding
     const currRows = dedupeRows(raw.filter(r=>ym(r.document_posted_date)===m));
     const prevRows = dedupeRows(raw.filter(r=>ym(r.document_posted_date)===prevM));
 
-    // keep score doing the thing (sort desc); null/blank bottom
     currRows.sort((a,b) => (Number(b.score) || -1) - (Number(a.score) || -1));
 
     const currMetrics = calcMetrics(currRows);
@@ -525,7 +575,6 @@ The information is descriptive and serves as a reference point for understanding
 
     windowLabel.textContent = monthRangeLabel(m);
 
-    // NEW: show the correct static summary for the month
     setMonthSummary(m);
 
     renderKPIs(currMetrics, prevMetrics);
